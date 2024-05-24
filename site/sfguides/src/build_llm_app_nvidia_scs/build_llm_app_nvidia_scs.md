@@ -209,7 +209,7 @@ SHOW IMAGE REPOSITORIES;
 -- Copy the image repository URL and use it to push the image from Docker installed machine (AWS EC2 instance preferred) to Snowflake.
 -- STOP HERE AND UPLOAD ALL REQUIRED CONTAINERS INTO THE IMAGE REPO
 -- Follow steps in 'docker.md' to run the commands using docker installed machine (AWS EC2 instance preferred).
--- Continue below steps after all 4 images are pushed to snowflake image repository
+-- Follow Docker Setup steps to push images to snowflake image repository
 ```
 
 ### Installation and Setup
@@ -320,69 +320,14 @@ Create NIM Application by running the [nims_app_pkg.sql](https://github.com/Snow
 Let us test the application before it is published,
 
 ```sql
-set APP_INSTANCE='<NAME>';
--- replace current_database() with a 'DATABASE NAME OF YOUR CHOICE' if compute pool create fails
-set APP_DATABASE=current_database();
-set APP_COMPUTE_POOL='NVIDIA_NEMO_'||$APP_INSTANCE;
-set APP_CUDA_DEVICES='<LIST OF DEVICE NUMBERS>';
-set APP_NUM_GPUS_PER_INSTANCE=1;
-set APP_NUM_INSTANCES=1;
-set APP_MAX_TOKEN=500;
-set APP_TEMPERATURE=0.0;
-set APP_TIMEOUT=1800;
-
-set APP_LOCAL_DB=$APP_DATABASE||'_LOCAL_DB';
-set APP_LOCAL_SCHEMA=$APP_LOCAL_DB||'.'||'EGRESS';
-set APP_LOCAL_EGRESS_RULE=$APP_LOCAL_SCHEMA||'.'||'NVIDIA_MS_APP_RULE';
-set APP_LOCAL_EAI = $APP_DATABASE||'_EAI';
-
-set APP_TEST_STMT='select '||$APP_INSTANCE||'.inference(\'Who founded Snowflake? Please be brief.\','||$APP_MAX_TOKEN||','||$APP_TEMPERATURE||');';
-
--- if this step fails , replace current_database() with a 'DATABASE NAME OF YOUR CHOICE'
-CREATE COMPUTE POOL IF NOT EXISTS IDENTIFIER($APP_COMPUTE_POOL) FOR APPLICATION IDENTIFIER($APP_DATABASE)
-  MIN_NODES=1
-  MAX_NODES=1
-  INSTANCE_FAMILY=GPU_NV_M;
-
-CREATE DATABASE IF NOT EXISTS IDENTIFIER($APP_LOCAL_DB);
-CREATE SCHEMA IF NOT EXISTS IDENTIFIER($APP_LOCAL_SCHEMA);
-
-CREATE or REPLACE NETWORK RULE IDENTIFIER($APP_LOCAL_EGRESS_RULE)
-  TYPE = 'HOST_PORT'
-  MODE= 'EGRESS'
-  VALUE_LIST = ('0.0.0.0:443','0.0.0.0:80');
-
--- If this statement is failing, it is because database NVIDIA_MS_APP_LOCAL_DB doesn't exist
--- Check the value of $APP_LOCAL_DB and replace NVIDIA_MS_APP_LOCAL_DB with the value of $APP_LOCAL_DB
-CREATE OR REPLACE EXTERNAL ACCESS INTEGRATION IDENTIFIER($APP_LOCAL_EAI)
-  ALLOWED_NETWORK_RULES = (NVIDIA_NEMO_MS_APP_LOCAL_DB.EGRESS.NVIDIA_MS_APP_RULE)
-  ENABLED = true;
-
-GRANT USAGE ON DATABASE IDENTIFIER($APP_LOCAL_DB) TO APPLICATION IDENTIFIER($APP_DATABASE);
-GRANT USAGE ON SCHEMA IDENTIFIER($APP_LOCAL_SCHEMA) TO APPLICATION IDENTIFIER($APP_DATABASE);
-GRANT USAGE ON NETWORK RULE IDENTIFIER($APP_LOCAL_EGRESS_RULE) TO APPLICATION IDENTIFIER($APP_DATABASE);
-
-GRANT USAGE ON INTEGRATION IDENTIFIER($APP_LOCAL_EAI) TO APPLICATION  IDENTIFIER($APP_DATABASE);
-GRANT USAGE ON COMPUTE POOL IDENTIFIER($APP_COMPUTE_POOL) TO APPLICATION IDENTIFIER($APP_DATABASE);
-GRANT BIND SERVICE ENDPOINT ON ACCOUNT TO APPLICATION IDENTIFIER($APP_DATABASE);
-
-GRANT USAGE ON COMPUTE POOL IDENTIFIER($APP_COMPUTE_POOL) TO APPLICATION IDENTIFIER($APP_DATABASE);
-
-call core.initialize_app_instance(
-  $APP_INSTANCE
-  ,$APP_COMPUTE_POOL
-  ,$APP_CUDA_DEVICES
-  ,$APP_NUM_GPUS_PER_INSTANCE
-  ,$APP_NUM_INSTANCES
-  ,$APP_LOCAL_EAI
-  ,$APP_TIMEOUT);
+use database NVIDIA_NEMO_MS_APP;
+use schema app1;
 -- call core.start_app_instance($APP_INSTANCE);
 -- call core.stop_app_instance($APP_INSTANCE);
 -- call core.drop_app_instance($APP_INSTANCE);
--- call core.list_app_instance($APP_INSTANCE);
 -- call core.restart_app_instance($APP_INSTANCE);
--- call core.get_app_endpoint($APP_INSTANCE);
--- SELECT $APP_TEST_STMT;
+call core.list_app_instance($APP_INSTANCE);
+call core.get_app_endpoint($APP_INSTANCE);
 ```
 
 #### Publish Your Native App
@@ -487,9 +432,9 @@ call core.initialize_app_instance(
 -- call core.start_app_instance($APP_INSTANCE);
 -- call core.stop_app_instance($APP_INSTANCE);
 -- call core.drop_app_instance($APP_INSTANCE);
--- call core.list_app_instance($APP_INSTANCE);
 -- call core.restart_app_instance($APP_INSTANCE);
--- call core.get_app_endpoint($APP_INSTANCE);
+call core.list_app_instance($APP_INSTANCE);
+call core.get_app_endpoint($APP_INSTANCE);
 -- SELECT $APP_TEST_STMT;
 ```
 
