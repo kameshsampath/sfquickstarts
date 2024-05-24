@@ -1,4 +1,4 @@
-author: Kamesh Sampath, Vino Duraisamy
+author: Karuna Nadadur, Kamesh Sampath
 id: build_llm_app_nvidia_scs
 summary: Build LLM App Powered By NVIDIA on Snowpark Container Services
 categories: llm,snowpark-container-services,nvidia,app
@@ -19,15 +19,15 @@ This repo primarily shows how to download a Large Language Model [Mistral-7b-ins
 
 ![Architecture](./assets/architecture.png)
 
-If you are interested in shrinking a different Large Language Model from Huggingface, you need a different instruct.yaml file that will generate a new model which will fit in a smaller GPU.
+If you are interested in shrinking a different Large Language Model from Huggingface, you need a different `instruct.yaml` file that will generate a new model which will fit in a smaller GPU.
 
-### Prerequisites
+## What You’ll Need
 
-#### NVIDIA
+### NVIDIA
 
-In this example, We are not downloading the model hosted on [nvcr.io](https://registry.ngc.nvidia.com/orgs/ohlfw0olaadg/teams/ea-participants/containers/nemollm-inference-ms/tags), but we will still be using [NIMs Inference Microservices container](https://registry.ngc.nvidia.com/orgs/ohlfw0olaadg/teams/ea-participants/containers/nemollm-inference-ms/tags) for optimized GPU performance. So please register and create your login credentials. (**UPDATE**: Where to register ???)
+In this example, we are not downloading the model hosted on [nvcr.io](https://registry.ngc.nvidia.com/orgs/ohlfw0olaadg/teams/ea-participants/containers/nemollm-inference-ms/tags), but we will still be using [NIMs Inference Microservices container](https://registry.ngc.nvidia.com/orgs/ohlfw0olaadg/teams/ea-participants/containers/nemollm-inference-ms/tags) for optimized GPU performance.[Register and create your login credentials](https://ngc.nvidia.com/) and get yourself added to a organisation/team.
 
-#### Huggingface
+### Huggingface
 
 Since you are downloading the model from Huggingface, you need to
 
@@ -45,18 +45,21 @@ git clone https://<user>:<token>@huggingface.co/mistralai/Mistral-7B-Instruct-v0
 >
 > The folder where the model (git clone) gets downloaded is a block storage that is mounted in the Snowpark Container Service. The model size is somewhere ~55 GB and then the new model that would be generated is ~14 GB. So as a best practice, we should mount and use the blockstorage when launching the Snowflake Container. Follow [documentation](https://docs.snowflake.com/en/developer-guide/snowpark-container-services/block-storage-volume) on how to use block storage when creating the service in snowpark container
 
-### What You’ll Need
-
-**TODO**: UPDATE
+> aside negative
+> This is a Native App - Snowpark Container Service implementing the NVIDIA NeMo Microservices inference service. You need to have the NA<>SPCS feature enabled in your account in the regions where it is available. So please reach out to your **Snowflake Account Representative** if you wish to build this App.
 
 - A Snowflake account. A [free trial](https://signup.snowflake.com/) will suffice. [Standard Edition](https://docs.snowflake.com/en/user-guide/intro-editions#standard-edition) will work for most of this lab, but if you’d like to try governance features covered in section 4, you will need [Enterprise](https://docs.snowflake.com/en/user-guide/intro-editions#enterprise-edition) or [Business Critical Edition](https://docs.snowflake.com/en/user-guide/intro-editions#business-critical-edition).
+
 - A storage bucket with the same cloud provider in the same region that hosts your Snowflake account above. Direct credential access required as storage integrations are not supported for External Volumes.
 
-### What You’ll Build
+## What You’ll Build
 
-**TODO**: UPDATE
-
-Build Snowflake Nartive LLM App Powered By NVIDIA and deploy it using Snowpark Container Services.
+- Build Snowflake LLM Native App powered by NVIDIA Inference microservices
+- Download Mistral-7b-instruct LLM from Huggingface
+- Generate a new model using model generator on NIM container
+- Publish Mistral Inference App as internal Snowflake Native Application
+- Launch the Inference Server using Snowpark Container Services
+- Expose the Inference Service as Streamlit Application
 
 <!-- ------------------------ -->
 
@@ -64,7 +67,7 @@ Build Snowflake Nartive LLM App Powered By NVIDIA and deploy it using Snowpark C
 
 Duration: 10
 
-**TODO**: Quick description on Model Generator ?
+Model Generator [model_generator.sh](https://github.com/Snowflake-Labs/sfguide-build-ai-app-using-nvidia-snowpark-container-services/blob/main/docker/inference/modelgenerator.sh) script downloads `Mistral LLM` model from Huggingface and using NIMs and `model_generator` package shrink the LLM model to fit to a smaller GPU (`A10G = GPU_NV_M`).
 
 Let us dissect the [model_generator.sh](https://github.com/Snowflake-Labs/sfguide-build-ai-app-using-nvidia-snowpark-container-services/blob/main/docker/inference/modelgenerator.sh) script and understand what the model generator does,
 
@@ -98,7 +101,7 @@ ln -s /blockstore/model/store/trt_llm_0.0.1_trtllm /model-store/trt_llm_0.0.1_tr
 
 The Inference service executes the `model_generator.sh` to generate the model and launch the `triton` inference server with requested/assigned number of GPUs.
 
-The Inferenec service is configured using an YAML as shown,
+The Inference service is configured using an YAML as shown,
 
 ```yaml
 - name: inference
@@ -123,26 +126,13 @@ The Inferenec service is configured using an YAML as shown,
 
 Clone the guide demo sources and set the `$DEMO_HOME` environment variable to the source folder,
 
-````shell
+```shell
 git clone https://github.com/Snowflake-Labs/sfguide-build-ai-app-using-nvidia-snowpark-container-services
 cd sfguide-build-ai-app-using-nvidia-snowpark-container-services
 export DEMO_HOME="$PWD"
 ```
 
-### Snowflake Account
-
-- If not done yet, register for a Snowflake free 30-day trial at [https://trial.snowflake.com](https://trial.snowflake.com)
-
-- You will have different Snowflake editions (Standard, Enterprise, e.g.), cloud providers (GCP, AWS, or Azure), and regions (Us Central, Europe West, e.g.) available to you. For this lab, please select AWS as your cloud provider and at minimum enterprise edition.
-
-- After registering, you will receive an email with an activation link and your Snowflake account URL. Bookmark this URL for easy future access.
-
-> aside negative
-> This is a Native App - Snowpark Container Service implementing the NVIDIA NeMo Microservices inference service. You need to have the NA<>SPCS feature enabled in your account in the regions where it is available. So please reach out to your snowflake account representative if you wish to build this App.
-
 ### Create Provider and Consumer Roles
-
-**TODO**: Does this fictious `NVIDIA_LLM_APP` role name OK?
 
 ```sql
 USE ROLE ACCOUNTADMIN;
@@ -175,7 +165,52 @@ GRANT MANAGE EVENT SHARING ON ACCOUNT TO ROLE NVIDIA_LLM_APP_CONSUMER_ROLE;
 GRANT BIND SERVICE ENDPOINT ON ACCOUNT TO ROLE NVIDIA_LLM_APP_CONSUMER_ROLE WITH GRANT OPTION;
 
 GRANT ROLE NVIDIA_LLM_APP_CONSUMER_ROLE to USER <USER_NAME>;
-````
+```
+
+### Snowflake Setup
+
+```sql
+SET COMPUTE_POOL_NAME = 'my-compute-pool';
+-- ########## BEGIN INITIALIZATION  ######################################
+-- Create Compute pool using GPU_NV_M instance family
+CREATE COMPUTE POOL $COMPUTE_POOL_NAME
+  MIN_NODES=1
+  MAX_NODES=1
+  INSTANCE_FAMILY=GPU_NV_M; -- DO NOT CHANGE SIZE AS THE instruct.yaml is defined to work on A10G GPU with higher memory.
+                            -- GPU_NV_S may work but not guarenteed.
+
+SET APP_OWNER_ROLE = 'SPCS_PSE_PROVIDER_ROLE';
+SET APP_WAREHOUSE = 'XS_WH';
+SET APP_COMPUTE_POOL = $COMPUTE_POOL_NAME;
+SET APP_DISTRIBUTION = 'INTERNAL'; -- change to external when you are ready to publish outside your snowflake organization
+
+USE ROLE identifier($APP_OWNER_ROLE);
+
+-- DROP DATABASE IF EXISTS NVIDIA_NEMO_MS_APP_PKG ; --OPTIONAL STEP IF YOU WANT TO DROP THE APPLICATION PACKAGE. DONT UNCOMMENT
+
+USE WAREHOUSE identifier($APP_WAREHOUSE);
+
+CREATE DATABASE IF NOT EXISTS NVIDIA_NEMO_MS_MASTER;
+USE DATABASE NVIDIA_NEMO_MS_MASTER;
+CREATE SCHEMA IF NOT EXISTS CODE_SCHEMA;
+USE SCHEMA CODE_SCHEMA;
+CREATE IMAGE REPOSITORY IF NOT EXISTS SERVICE_REPO;
+
+CREATE APPLICATION PACKAGE IF NOT EXISTS NVIDIA_NEMO_MS_APP_PKG;
+
+USE DATABASE NVIDIA_NEMO_MS_APP_PKG;
+CREATE SCHEMA IF NOT EXISTS CODE_SCHEMA;
+CREATE STAGE IF NOT EXISTS APP_CODE_STAGE;
+
+-- ##########  END INITIALIZATION   ######################################
+
+SHOW IMAGE REPOSITORIES;
+
+-- Copy the image repository URL and use it to push the image from Docker installed machine (AWS EC2 instance preferred) to Snowflake.
+-- STOP HERE AND UPLOAD ALL REQUIRED CONTAINERS INTO THE IMAGE REPO
+-- Follow steps in 'docker.md' to run the commands using docker installed machine (AWS EC2 instance preferred).
+-- Continue below steps after all 4 images are pushed to snowflake image repository
+```
 
 ### Installation and Setup
 
@@ -197,23 +232,31 @@ After successful login build the following images that will be used by the Snowf
 cd "$DEMO_HOME/docker"
 ```
 
+Build the image associated to the Inference service,
+
 ```shell
 docker build . -t inference:v01
 ```
+
+Build the model storage image,
 
 ```shell
 docker build . -t model-store:v01
 ```
 
+Build the Snowflake handler to manage the Snowflake and Streamlit environment,
+
 ```shell
 docker build . -t snowflake_handler:v01
 ```
+
+Lab provides the Juypter lab environment,
 
 ```shell
 docker build . -t lab:v01
 ```
 
-Check the build images,
+List the images we built so far,
 
 ```shell
 docker images
@@ -221,7 +264,7 @@ docker images
 
 #### Push Images to Snowflake Image Registry
 
-Get the Snowflake image registry URL using the command,
+Get the Snowflake Image Registry URL using the command,
 
 > aside postive
 > Execute the following command in Snowsight worksheet or Snowflake CLI
@@ -259,7 +302,7 @@ docker push "$SNOWFLAKE_IMAGE_REGISTRY_URL/nvidia_nemo_ms_master/code_schema/ser
 Check if the `instruct.yaml` and `modelgenerator.sh` files are available on the container images,
 
 ```shell
-docker run -it --rm=true "$SNOWFLAKE_IMAGE_REGISTRY_URL/nvidia_nemo_ms_master/code_schema/service_repo/nemollm-inference-ms:24.02.nimshf" /bin/bash
+docker run --rm=true "$SNOWFLAKE_IMAGE_REGISTRY_URL/nvidia_nemo_ms_master/code_schema/service_repo/nemollm-inference-ms:24.02.nimshf" -- ls
 ```
 
 ### As a Provider
@@ -268,58 +311,9 @@ docker run -it --rm=true "$SNOWFLAKE_IMAGE_REGISTRY_URL/nvidia_nemo_ms_master/co
 USE ROLE NVIDIA_LLM_APP_PROVIDER_ROLE;
 ```
 
-#### Install Native App
+#### Create Native App
 
-Create NIM Application
-
-```sql
-SET COMPUTE_POOL_NAME = 'my-compute-pool'
-
--- Create Compute pool using GPU_NV_M instance family
-CREATE COMPUTE POOL $COMPUTE_POOL_NAME
-  MIN_NODES=1
-  MAX_NODES=1
-  INSTANCE_FAMILY=GPU_NV_M; -- DO NOT CHANGE SIZE AS THE instruct.yaml is defined to work on A10G GPU with higher memory.
-                            -- GPU_NV_S may work but not guarenteed.
-
-SET APP_OWNER_ROLE = 'SPCS_PSE_PROVIDER_ROLE';
-SET APP_WAREHOUSE = 'XS_WH';
-SET APP_COMPUTE_POOL = $COMPUTE_POOL_NAME;
-SET APP_DISTRIBUTION = 'INTERNAL'; -- change to external when you are ready to publish outside your snowflake organization
-
-USE ROLE identifier($APP_OWNER_ROLE);
-
--- DROP DATABASE IF EXISTS NVIDIA_NEMO_MS_APP_PKG ; --OPTIONAL STEP IF YOU WANT TO DROP THE APPLICATION PACKAGE. DONT UNCOMMENT
-
-USE WAREHOUSE identifier($APP_WAREHOUSE);
-
-CREATE DATABASE IF NOT EXISTS NVIDIA_NEMO_MS_MASTER;
-USE DATABASE NVIDIA_NEMO_MS_MASTER;
-CREATE SCHEMA IF NOT EXISTS CODE_SCHEMA;
-USE SCHEMA CODE_SCHEMA;
-CREATE IMAGE REPOSITORY IF NOT EXISTS SERVICE_REPO;
-
-CREATE APPLICATION PACKAGE IF NOT EXISTS NVIDIA_NEMO_MS_APP_PKG;
-
-USE DATABASE NVIDIA_NEMO_MS_APP_PKG;
-CREATE SCHEMA IF NOT EXISTS CODE_SCHEMA;
-CREATE STAGE IF NOT EXISTS APP_CODE_STAGE;
-```
-
-Validate the Application,
-
-```sql
--- TODO: When and where this database is created?
-USE DATABASE NVIDIA_NEMO_MS_APP;
-USE SCHEMA APP1;
--- CALL CORE.STOP_APP_INSTANCE('APP1');
--- CALL CORE.DROP_APP_INSTANCE('APP1');
--- CALL CORE.RESTART_APP_INSTANCE('APP1');
--- ALTER COMPUTE POOL APP1_NEW_GPU_COMPUTE_POOL_M RESUME; -- IF NOT ACTIVE RUN THIS COMMAND TO RESUME THE COMPUTE POOL
--- APP1_NEW_GPU_COMPUTE_POOL_M
-CALL CORE.LIST_APP_INSTANCE('APP1'); -- MAKE SURE ALL CONTAINERS ARE READY
-CALL CORE.GET_APP_ENDPOINT('APP1'); -- GET APP ENDPOINTS TO ACCESS STREAMLIT APP
-```
+Create NIM Application by running the [nims_app_pkg.sql](https://github.com/Snowflake-Labs/sfguide-build-ai-app-using-nvidia-snowpark-container-services/blob/main/Native%20App/Provider/02%20nims_app_pkg.sql) on your Snowsight worksheet.
 
 #### Test Application
 
@@ -530,8 +524,17 @@ Congratulations! You've successfully created build and deployed a Snowflake LLM 
 
 ### What You Learned
 
-**TODO**: Update
+Learnt How-To,
+
+- Build Snowflake LLM Native App powered by NVIDIA Inference microservices
+- Download Mistral-7b-instruct LLM from Huggingface
+- Generate a new model using model generator on NIM container
+- Publish Mistral Inference App as internal Snowflake Native Application
+- Launch the Inference Server using Snowpark Container Services
+- Expose the Inference Service as Streamlit Application
 
 ### Related Resources
 
-**TODO**: Update
+- <https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1>
+- <https://developer.nvidia.com/nemo-microservices>
+- <https://www.snowflake.com/en/data-cloud/workloads/applications/native-apps/>
